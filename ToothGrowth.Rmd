@@ -3,54 +3,71 @@ title: "ToothGrowth"
 author: "jagdeep s sihota"
 ---
 
-### Analyze the ToothGrowth data in the R datasets package
-### 1. Load the ToothGrowth data and perform some basic exploratory data analyses 
+## Part 2: ToothGrowth: Data Analysis
 
-- initial understanding of the data.(using facets)
-- make boxplots to campare Tooth length with different dosage for each supplements
-```{r boxplot, fig.height=2.5}
-library(datasets)
-library(ggplot2)
-p <- ggplot(ToothGrowth, aes(factor(dose), len))
-p+geom_boxplot()+facet_grid(.~supp)+labs(title = "plot1")
-```
-- make boxplot to compare Tooth length with different supplement for each dosage
-```{r boxplot2, fig.height=2.5}
-q <- ggplot(ToothGrowth, aes(factor(supp), len))
-q +geom_boxplot()+facet_grid(.~dose)+labs(title = "plot2")
-```
-- from plot1 we can see the tooth length increase along with the increase of the dosage nomatter for which supplement.
-- from plot2 it is a little hard to tell wheather there is difference impact on the tooth length between VC an OJ supplements for each dosage. (can make analysis on this point later)
-
-### 2.Provide a basic summary of the data.
-- Calculate the mean & sd for each dosage and supplement (use the ddply) 
+### 1. Load the ToothGrowth data and provide a basic summary of the data: 
 ```{r}
-library(plyr)
-TG_summary <- ddply(ToothGrowth,.(dose, supp), summarize, mean = mean(len), sd = sd(len))
-as.factor(TG_summary$dose)
-TG_summary
+# Loading the ToothGrowth data provided in the R dataset package
+library(datasets) 
+data(ToothGrowth) 
+```{r}
+par(mfrow = c(1, 2)) 
+boxplot(len~dose, data=ToothGrowth, main="Length vs Dosage") 
+boxplot(len~supp, data=ToothGrowth, main="Length vs Suppliment") 
 ```
 
-### 3.Use confidence intervals and hypothesis tests to compare tooth growth by supp and dose. 
-- We have two type of supp: orange juice and vitamin C. We need to use hypothesis testing to make conclusion if both supp have the same impact on tooth length.
-- use paired t-test to comapre mean for two supp for each dose
-- the confidence interval is for the difference between the length of toothlength under the effect of OJ and VC for each dose.
-```{r, echo=TRUE}
-ToothGrowth <- transform(ToothGrowth, dose=as.factor(dose))
-s <- split(ToothGrowth, list(ToothGrowth$supp, ToothGrowth$dose))
-t1 <- t.test(s[[1]][[1]], s[[2]][[1]], paired = TRUE, alternative = "greater")#dose= 0.5
-t2 <- t.test(s[[3]][[1]], s[[4]][[1]], paired = TRUE, alternative = "greater")#dose = 1
-t3 <- t.test(s[[5]][[1]], s[[6]][[1]], paired = TRUE, alternative = "greater")#dose = 2
+It appears that effect of administering larger doses of vitamin C resulted in, on average, longer teeth. But, that does not say which method of administering the vitamin is more effective.
+
+### 3. Use confidence intervals and hypothesis tests to compare tooth growth by supp and dose:
+
+#### 3.1. Tooth Growth by Suppliment:
+
+Average increased tooth length for the OJ group versus the VC group:
+```{r}
+OJTest <- ToothGrowth[ToothGrowth$supp=="OJ", "len"]
+VCTest <- ToothGrowth[ToothGrowth$supp=="VC", "len"]
+lengthChange=OJTest - VCTest 
+``` 
+The group treated with OJ has higher mean length of `r  mean(OJTest)` vs the VC group having the mean of about `r  mean(VCTest)`. Does that mean administering OJ makes average tooth growth bigger?
+
+Setting up the null and alternate hypotheses: <b>Ho:</b> lengthChange=0 VS. <b>Ha:</b> lengthChange>0
+
+```{r} 
+lower_bound_ci=mean(lengthChange) - 1.96*sd(lengthChange)/sqrt(length(lengthChange))
+upper_bound_ci=mean(lengthChange) + 1.96*sd(lengthChange)/sqrt(length(lengthChange))
+
+``` 
+
+The confidence interval (`r lower_bound_ci`,`r upper_bound_ci`) does not include 0 - the mean length change for null hypothesis. So, we reject the null hypothesis. Thus, at 95% confidence level, it is plausible that the tooth growth by OJ is larger than VC. 
+
+#### 3.2. Tooth Growth by Dose:
+
+##### Tooth Growth by Suppliment when dosage is (0.5,1):
+```{r}
+lowOJ <- ToothGrowth[ToothGrowth$supp=="OJ" & ToothGrowth$dose %in% c(0.5,1),"len"] 
+lowVC <- ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose %in% c(0.5,1),"len"]
 ```
-- the confidence level for dose 0.5 is `r t1$con`, and the p-value is `r t1$p.value`
-- the confidence level for dose 0.5 is `r t2$con`, and the p-value is `r t2$p.value`
-- the confidence level for dose 0.5 is `r t3$con`, and the p-value is `r t3$p.value`
+Confidence interval and test the hypothesis: 
+```{r}
+alpha<-0.05; 
+tt<-t.test(lowOJ,lowVC); #tt
+```
 
-### 4.State your conclusions and the assumptions needed for your conclusions. 
-### assumptions:
-- the hypothesis is: both supp have the same impact on tooth length.
-- the alternative hypothesis is: OJ can promote the growth of toothlength than VC.
-- significance level: 0.05
+For t>0, confidence interval limits >0, <b>Ho:</b>meanOfOJ = meanOfVC VS. <b>Ha</b>: meanOfOJ > meanOfVC
 
-### conclusions: 
-- OJ have more impact on the growth of toothlength under dose equals to 0.5 or 1.But can't get this conclusion when dose equals to 2. We need further research.
+Ho is rejected, because TS(t = `r tt$statistic`) > qt(1-alpha,`r tt$parameter`)( = `r qt(1-alpha,tt$parameter)`). 
+
+##### Tooth Growth by Suppliment when dosage is 2:
+```{r}
+highOJ<- ToothGrowth[ToothGrowth$supp=="OJ" & ToothGrowth$dose==2,"len"] 
+highVC<- ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose==2,"len"]
+tt<-t.test(highOJ,highVC); #tt
+```
+t<0, test the hypothes: <b>Ho:</b>meanOfOJ = meanOfVC versus <b>Ha:</b> meanOfOJ < meanOfVC
+
+Ho is rejected, because TS(t = `r tt$statistic`) < qt(1-alpha,`r tt$parameter`)( = `r qt(1-alpha/2,tt$parameter)`). 
+ 
+### 4. State your conclusions and the assumptions needed for your conclusions:
+
+By 95% confidence interval, for doses 0.5 or 1, tooth growth by OJ is larger than by VC. 
+For larger dosage of 2, tooth growth by OJ is smaller than by VC .
