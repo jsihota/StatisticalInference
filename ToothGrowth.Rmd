@@ -1,6 +1,7 @@
 ---
 title: "Tooth Growth"
 author: "jagdeep s sihota"
+output: pdf_document
 ---
 
 ## ToothGrowth: Data Analysis
@@ -53,22 +54,22 @@ lowVC <- ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose %in% c(0.5,1),"le
 Confidence interval and test the hypothesis: 
 ```{r}
 alpha<-0.05; 
-tt<-t.test(lowOJ,lowVC); #tt
+th<-t.test(lowOJ,lowVC); 
 ```
 
 For t>0, confidence interval limits >0, <b>Ho:</b>meanOfOJ = meanOfVC VS. <b>Ha</b>: meanOfOJ > meanOfVC
 
-Ho is rejected, because TS(t = `r tt$statistic`) > qt(1-alpha,`r tt$parameter`)( = `r qt(1-alpha,tt$parameter)`). 
+Ho is rejected, because TS(t = `r th$statistic`) > qt(1-alpha,`r th$parameter`)( = `r qt(1-alpha,th$parameter)`). 
 
 ##### Tooth Growth by Suppliment when dosage is 2:
 ```{r}
 highOJ<- ToothGrowth[ToothGrowth$supp=="OJ" & ToothGrowth$dose==2,"len"] 
 highVC<- ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose==2,"len"]
-tt<-t.test(highOJ,highVC); #tt
+th<-t.test(highOJ,highVC); 
 ```
 t<0, test the hypothes: <b>Ho:</b>meanOfOJ = meanOfVC versus <b>Ha:</b> meanOfOJ < meanOfVC
 
-Ho is rejected, because TS(t = `r tt$statistic`) < qt(1-alpha,`r tt$parameter`)( = `r qt(1-alpha/2,tt$parameter)`). 
+Ho is rejected, because TS(t = `r th$statistic`) < qt(1-alpha,`r th$parameter`)( = `r qt(1-alpha/2,th$parameter)`). 
  
 ### 4. State your conclusions and the assumptions needed for your conclusions:
 
